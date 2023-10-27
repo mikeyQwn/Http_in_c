@@ -1,9 +1,11 @@
 #include <arpa/inet.h>
 #include <malloc.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "parsing.h"
 #include "server.h"
 
 #define BUFSIZE 1024
@@ -85,11 +87,23 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
         close(connfd);
         return -1;
     }
+    printf("%s", buff);
+    printf("\n---------\n");
+    HTTPRequest *parsed_request = parse_request(buff);
+    if (parsed_request != NULL)
+        printf("METHOD: %s\nPATH: %s\nVERSION: %s\n",
+               HTTPMethod_toString(parsed_request->method),
+               parsed_request->path,
+               HTTPVersion_toString(parsed_request->version));
     char ok_res[] = "HTTP/1.0 200 OK\n";
     write(connfd, ok_res, sizeof(ok_res));
 
     close(connfd);
     free(buff);
+    if (parsed_request) {
+        free(parsed_request->path);
+        free(parsed_request);
+    }
 
     return 0;
 }
