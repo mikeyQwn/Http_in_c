@@ -35,29 +35,32 @@ const char *HTTPVersion_toString(HTTPVersion self) {
     exit(1);
 };
 
-static HTTPMethod parse_method(char *request) {
-    if (!strncmp("GET", request, 3))
+static HTTPMethod parse_method(char **request) {
+    if (!strncmp("GET", *request, 3)) {
+        *request = *request + 3;
         return HTTP_GET;
-    if (!strncmp("HEAD", request, 3))
+    }
+    if (!strncmp("HEAD", *request, 4)) {
+        *request = *request + 4;
         return HTTP_HEAD;
-    if (!strncmp("POST", request, 3))
+    }
+    if (!strncmp("POST", *request, 4)) {
+        *request = *request + 4;
         return HTTP_POST;
+    }
     return HTTP_UNDEFINED;
 }
 
-static char *move_beyond_whitespace(char *str) {
-    while (*str != '\0' && *str != ' ')
-        ++str;
-    if (*str != '\0')
-        ++str;
-    return str;
-}
+void move_beyond_whitespaces(char **str) {
+    while (**str != '\0' && **str == ' ')
+        ++*str;
+};
 
-static char *parse_path(char *request) {
-    char *start = request;
+static char *parse_path(char **request) {
+    char *start = *request;
     size_t len = 0;
-    while (*request != '\0' && *request != ' ') {
-        ++request;
+    while (**request != '\0' && **request != ' ') {
+        ++*request;
         ++len;
     }
     if (len == 0)
@@ -68,33 +71,41 @@ static char *parse_path(char *request) {
     return res;
 }
 
-static HTTPVersion parse_version(char *request) {
-    if (strncmp("HTTP/", request, 5))
+static HTTPVersion parse_version(char **request) {
+    if (strncmp("HTTP/", *request, 5))
         return HTTP_VERSION_UNDEFINED;
-    request = request + 5;
-    if (!strncmp("1.0", request, 3))
+    *request = *request + 5;
+    if (!strncmp("1.0", *request, 3)) {
+        *request = *request + 3;
         return HTTP_VERSION_1_0;
-    if (!strncmp("1.1", request, 3))
+    }
+    if (!strncmp("1.1", *request, 3)) {
+        *request = *request + 3;
         return HTTP_VERSION_1_1;
-    if (!strncmp("2.0", request, 3))
+    }
+    if (!strncmp("2.0", *request, 3)) {
+        *request = *request + 3;
         return HTTP_VERSION_2_0;
-    if (!strncmp("3.0", request, 3))
+    }
+    if (!strncmp("3.0", *request, 3)) {
+        *request = *request + 3;
         return HTTP_VERSION_3_0;
+    }
     return HTTP_VERSION_UNDEFINED;
 };
 
 HTTPRequest *parse_request(char *request) {
-    HTTPMethod method = parse_method(request);
+    HTTPMethod method = parse_method(&request);
     if (method == HTTP_UNDEFINED)
         return NULL;
-    request = move_beyond_whitespace(request);
+    move_beyond_whitespaces(&request);
 
-    char *path = parse_path(request);
+    char *path = parse_path(&request);
     if (!path)
         return NULL;
-    request = move_beyond_whitespace(request);
+    move_beyond_whitespaces(&request);
 
-    HTTPVersion version = parse_version(request);
+    HTTPVersion version = parse_version(&request);
     if (version == HTTP_VERSION_UNDEFINED)
         return NULL;
 
