@@ -68,7 +68,7 @@ static char *read_request(int connfd, int *bytes_read) {
     *bytes_read = current_buff_size;
 
     return buff;
-};
+}
 
 // Accepts and handles a single connection
 static int ChadtpServer_accept_connection(ChadtpServer *self) {

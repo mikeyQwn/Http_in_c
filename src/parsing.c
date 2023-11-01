@@ -33,7 +33,7 @@ const char *HTTPVersion_toString(HTTPVersion self) {
         return "UNDEFINED";
     }
     exit(1);
-};
+}
 
 static HTTPMethod parse_method(char **request) {
     if (!strncmp("GET", *request, 3)) {
@@ -54,7 +54,7 @@ static HTTPMethod parse_method(char **request) {
 void move_beyond_whitespaces(char **str) {
     while (**str != '\0' && **str == ' ')
         ++*str;
-};
+}
 
 static char *parse_path(char **request) {
     char *start = *request;
@@ -92,7 +92,7 @@ static HTTPVersion parse_version(char **request) {
         return HTTP_VERSION_3_0;
     }
     return HTTP_VERSION_UNDEFINED;
-};
+}
 
 HTTPRequest *parse_request(char *request) {
     HTTPMethod method = parse_method(&request);
@@ -114,4 +114,4 @@ HTTPRequest *parse_request(char *request) {
     res->path = path;
     res->version = version;
     return res;
-};
+}
