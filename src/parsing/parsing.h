@@ -21,15 +21,6 @@ typedef struct {
 } HTTPHeader;
 
 typedef struct {
-    char **header_parts;
-    size_t length;
-    size_t capacity;
-} HeaderPartVector;
-
-HeaderPartVector *HeaderPartVector_new();
-void HeaderPartVector_push(HeaderPartVector *, char *);
-
-typedef struct {
     size_t length;
     HTTPHeader *headers;
 } HTTPHeaders;

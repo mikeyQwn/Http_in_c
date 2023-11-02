@@ -13,10 +13,10 @@ run_dev: build_debug
 
 build_release : 
 	mkdir -p $(ODIR)/release
-	$(CC) $(CFLAGS) -O3 src/*.c -o $(ODIR)/release/$(FILENAME)
+	$(CC) $(CFLAGS) -O3 src/parsing/*.c src/*.c -o $(ODIR)/release/$(FILENAME)
 
 build_debug : 
 	mkdir -p $(ODIR)/debug
-	$(CC) $(CFLAGS) -g src/*.c -o $(ODIR)/debug/$(FILENAME)
+	$(CC) $(CFLAGS) -g src/parsing/*.c src/*.c -o $(ODIR)/debug/$(FILENAME)
 
 

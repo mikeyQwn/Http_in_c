@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "parsing.h"
+#include "parsing/parsing.h"
 #include "server.h"
 
 #define BUFSIZE 1024
