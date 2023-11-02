@@ -1,7 +1,7 @@
 CC=gcc
 ODIR=dist
 FILENAME=chadtp
-CFLAGS=-Wall
+CFLAGS=-Wall -pedantic
 
 all : build_release
 

@@ -90,11 +90,17 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     printf("%s", buff);
     printf("\n---------\n");
     HTTPRequest *parsed_request = parse_request(buff);
-    if (parsed_request != NULL)
+    if (parsed_request != NULL) {
         printf("METHOD: %s\nPATH: %s\nVERSION: %s\n",
                HTTPMethod_toString(parsed_request->method),
                parsed_request->path,
                HTTPVersion_toString(parsed_request->version));
+        for (int i = 0; i < parsed_request->headers.length; ++i) {
+            printf("KEY: %s, VALUE: %s\n",
+                   parsed_request->headers.headers[i].key,
+                   parsed_request->headers.headers[i].value);
+        }
+    }
     char ok_res[] = "HTTP/1.0 200 OK\n";
     write(connfd, ok_res, sizeof(ok_res));
 
@@ -102,6 +108,7 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     free(buff);
     if (parsed_request) {
         free(parsed_request->path);
+        free(parsed_request->headers.headers);
         free(parsed_request);
     }
 
