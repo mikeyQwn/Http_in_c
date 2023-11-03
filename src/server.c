@@ -118,7 +118,8 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
                     "\n";
     write(connfd, ok_res, sizeof(ok_res) - 1);
     write(connfd, http_response->buffer, http_response->length * sizeof(char));
-    printf("Written: %s\n", http_response->buffer);
+    printf("WRITTEN: %.*s\n", (int)http_response->length,
+           http_response->buffer);
 
     close(connfd);
     free(buff);
