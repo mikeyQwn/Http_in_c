@@ -24,11 +24,11 @@ int main(int argc, char **argv) {
     char ip[] = "127.0.0.1";
     unsigned short port = 8080;
     ChadtpServer *server = ChadtpServer_new(port, ip);
-    ChadtpServer_add_handler(server, helloHandler);
     if (server == NULL) {
         printf("EXITING...\n");
         return -1;
     }
+    ChadtpServer_add_handler(server, helloHandler);
     printf("The server is now running on port %d\n", port);
     ChadtpServer_listen_and_serve(server);
     free(server);

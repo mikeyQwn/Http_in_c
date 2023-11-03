@@ -155,4 +155,4 @@ void ChadtpServer_add_handler(ChadtpServer *self, HandlerFunction f) {
     }
     self->handlers[self->handlers_length] = f;
     self->handlers_length += 1;
-};
+}
