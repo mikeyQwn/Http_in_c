@@ -1,6 +1,7 @@
-#include "parsing.h"
 #include <stdlib.h>
 #include <string.h>
+
+#include "parsing.h"
 
 typedef struct {
     char **header_parts;

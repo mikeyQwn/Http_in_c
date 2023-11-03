@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <malloc.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -34,6 +35,11 @@ ChadtpServer *ChadtpServer_new(unsigned short port, const char *ip) {
     if ((bind(server->sockfd, (struct sockaddr *)&servaddr,
               sizeof(servaddr))) != 0)
         return NULL;
+
+    server->handlers_length = 0;
+    server->handlers_capacity = 5;
+    server->handlers = (HandlerFunction *)malloc(sizeof(HandlerFunction) *
+                                                 server->handlers_capacity);
 
     return server;
 }
@@ -90,6 +96,10 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     printf("%s", buff);
     printf("\n---------\n");
     HTTPRequest *parsed_request = parse_request(buff);
+    HTTPResponse *http_response = malloc(sizeof(HTTPResponse));
+    http_response->length = 0;
+    http_response->capacity = 5;
+    http_response->buffer = malloc(sizeof(char) * http_response->capacity);
     if (parsed_request != NULL) {
         printf("METHOD: %s\nPATH: %s\nVERSION: %s\n",
                HTTPMethod_toString(parsed_request->method),
@@ -101,8 +111,14 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
                    parsed_request->headers.headers[i].value);
         }
     }
-    char ok_res[] = "HTTP/1.0 200 OK\n";
-    write(connfd, ok_res, sizeof(ok_res));
+    for (int i = 0; i < self->handlers_length; ++i) {
+        self->handlers[i](parsed_request, http_response);
+    }
+    char ok_res[] = "HTTP/1.0 200 OK\n"
+                    "\n";
+    write(connfd, ok_res, sizeof(ok_res) - 1);
+    write(connfd, http_response->buffer, http_response->length * sizeof(char));
+    printf("Written: %s\n", http_response->buffer);
 
     close(connfd);
     free(buff);
@@ -131,3 +147,12 @@ int ChadtpServer_listen_and_serve(ChadtpServer *self) {
     close(self->sockfd);
     return error;
 }
+
+void ChadtpServer_add_handler(ChadtpServer *self, HandlerFunction f) {
+    if (self->handlers_capacity == self->handlers_length) {
+        self->handlers_capacity *= 2;
+        self->handlers = realloc(self->handlers, self->handlers_capacity);
+    }
+    self->handlers[self->handlers_length] = f;
+    self->handlers_length += 1;
+};
