@@ -166,14 +166,15 @@ static int parse_header_line(ParserHead *parser_head) {
     return 0;
 }
 
-HTTPHeaders parse_headers(char *request) {
+HTTPHeaders parse_headers(char **request) {
     HeaderPartVector *keys = HeaderPartVector_new();
     HeaderPartVector *values = HeaderPartVector_new();
     ParserHead parser_head;
-    parser_head.head = &request;
+    parser_head.head = request;
     parser_head.keys = keys;
     parser_head.values = values;
     parser_head.previous_start = NULL;
+    parser_head.previous_from_delimeter = 0;
     while (parse_header_line(&parser_head) == 0) {
     }
     if (parser_head.previous_start != NULL) {

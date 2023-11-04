@@ -30,6 +30,7 @@ typedef struct {
     char *path;
     HTTPVersion version;
     HTTPHeaders headers;
+    char *body;
 } HTTPRequest;
 
 typedef struct {

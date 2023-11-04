@@ -65,6 +65,21 @@ static HTTPVersion parse_version(char **request) {
     return HTTP_VERSION_UNDEFINED;
 }
 
+static char *parse_body(char **request) {
+    char *start = *request;
+    size_t len = 0;
+    while (**request != '\0') {
+        ++*request;
+        ++len;
+    }
+    if (len == 0)
+        return NULL;
+    char *res = malloc(sizeof(char) * (len + 1));
+    res[len] = '\0';
+    strncpy(res, start, len);
+    return res;
+}
+
 HTTPRequest *parse_request(char *request) {
     HTTPMethod method = parse_method(&request);
     if (method == HTTP_UNDEFINED)
@@ -84,12 +99,14 @@ HTTPRequest *parse_request(char *request) {
     while (*request == '\n' || *request == '\r') {
         ++request;
     }
-    HTTPHeaders headers = parse_headers(request);
+    HTTPHeaders headers = parse_headers(&request);
+    char *body = parse_body(&request);
 
     HTTPRequest *res = (HTTPRequest *)malloc(sizeof(HTTPRequest));
     res->method = method;
     res->path = path;
     res->version = version;
     res->headers = headers;
+    res->body = body;
     return res;
 }

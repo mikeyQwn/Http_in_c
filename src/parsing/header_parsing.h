@@ -3,6 +3,6 @@
 
 #include "parsing.h"
 
-HTTPHeaders parse_headers(char *);
+HTTPHeaders parse_headers(char **);
 
 #endif
