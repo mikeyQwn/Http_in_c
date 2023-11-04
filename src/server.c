@@ -127,6 +127,10 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     free(http_response);
     if (parsed_request) {
         free(parsed_request->path);
+        for (size_t i = 0; i < parsed_request->headers.length; i++) {
+            free(parsed_request->headers.headers[i].key);
+            free(parsed_request->headers.headers[i].value);
+        }
         free(parsed_request->headers.headers);
         free(parsed_request);
     }
