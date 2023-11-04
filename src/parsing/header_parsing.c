@@ -39,11 +39,11 @@ void HeaderPartVector_free(HeaderPartVector *self) {
     free(self);
 }
 
-static int strip_string(char *dst, const char *src) {
+static int strip_string(char *dst, const char *src, size_t length) {
     size_t len = 0;
     int met_space = 0;
-    while (*src != '\n') {
-        if (*src == ' ') {
+    for (size_t i = 0; i < length; ++i) {
+        if (*src == ' ' || *src == '\n' || *src == '\r') {
             ++src;
             if (met_space)
                 continue;
@@ -64,7 +64,7 @@ static int strip_string(char *dst, const char *src) {
 
 static char *copy_string_stripped(char *src, size_t len) {
     char *res = malloc(sizeof(char) * (len + 1));
-    size_t actual_len = strip_string(res, src);
+    size_t actual_len = strip_string(res, src, len);
     res[actual_len] = '\0';
     return res;
 }
@@ -101,8 +101,19 @@ static size_t move_to_next_non_whitespace(char **str) {
     return newlines;
 }
 
-static int parse_header_line(char **head, HeaderPartVector *keys,
-                             HeaderPartVector *values) {
+typedef struct {
+    HeaderPartVector *keys;
+    HeaderPartVector *values;
+    char **head;
+    char *previous_start;
+    size_t previous_from_delimeter;
+} ParserHead;
+
+static int parse_header_line(ParserHead *parser_head) {
+    char **head = parser_head->head;
+    HeaderPartVector *keys = parser_head->keys;
+    HeaderPartVector *values = parser_head->values;
+
     if (should_return(head))
         return 1;
 
@@ -115,31 +126,35 @@ static int parse_header_line(char **head, HeaderPartVector *keys,
         switch (**head) {
         case '\0':
             return -1;
-        case '\r':
-            *head += 1;
-            if (**head == '\n') {
-                *head += 1;
-                if (met_colon) {
-                    char *res = copy_string_stripped(start, from_delimeter);
-                    HeaderPartVector_push(values, res);
-                }
-                return 0;
-            }
         case '\n':
             *head += 1;
+            if (parser_head->previous_start) {
+                parser_head->previous_from_delimeter += from_delimeter;
+                return 0;
+            }
+            parser_head->previous_start = start;
+            parser_head->previous_from_delimeter = from_delimeter;
             return 0;
         case ':': {
             if (met_colon) {
                 *head += 1;
                 break;
             }
-            char *res = copy_string(start, from_delimeter);
-            HeaderPartVector_push(keys, res);
+            if (parser_head->previous_start != NULL) {
+                char *value =
+                    copy_string_stripped(parser_head->previous_start,
+                                         parser_head->previous_from_delimeter);
+                HeaderPartVector_push(values, value);
+                parser_head->previous_start = NULL;
+            }
+            char *header = copy_string(start, from_delimeter);
+            HeaderPartVector_push(keys, header);
             *head += 1;
             met_colon = 1;
             from_delimeter = 0;
-            // FIXME: potential newline
-            move_to_next_non_whitespace(head);
+            size_t newlines = move_to_next_non_whitespace(head);
+            if (newlines != 0)
+                return -1;
             start = *head;
             break;
         }
@@ -154,13 +169,24 @@ static int parse_header_line(char **head, HeaderPartVector *keys,
 HTTPHeaders parse_headers(char *request) {
     HeaderPartVector *keys = HeaderPartVector_new();
     HeaderPartVector *values = HeaderPartVector_new();
-    while (parse_header_line(&request, keys, values) == 0) {
+    ParserHead parser_head;
+    parser_head.head = &request;
+    parser_head.keys = keys;
+    parser_head.values = values;
+    parser_head.previous_start = NULL;
+    while (parse_header_line(&parser_head) == 0) {
+    }
+    if (parser_head.previous_start != NULL) {
+        char *value = copy_string_stripped(parser_head.previous_start,
+                                           parser_head.previous_from_delimeter);
+        HeaderPartVector_push(values, value);
     }
     HTTPHeaders headers;
     if (keys->length != values->length) {
         HeaderPartVector_free(keys);
         HeaderPartVector_free(values);
         headers.length = 0;
+        headers.headers = NULL;
         return headers;
     }
 

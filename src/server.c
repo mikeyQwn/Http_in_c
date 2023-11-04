@@ -131,7 +131,8 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
             free(parsed_request->headers.headers[i].key);
             free(parsed_request->headers.headers[i].value);
         }
-        free(parsed_request->headers.headers);
+        if (parsed_request->headers.headers)
+            free(parsed_request->headers.headers);
         free(parsed_request);
     }
 
