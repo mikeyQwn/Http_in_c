@@ -123,6 +123,8 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
 
     close(connfd);
     free(buff);
+    free(http_response->buffer);
+    free(http_response);
     if (parsed_request) {
         free(parsed_request->path);
         free(parsed_request->headers.headers);
