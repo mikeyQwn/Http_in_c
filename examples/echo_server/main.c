@@ -5,8 +5,16 @@
 
 int echo_handler(HTTPRequest *req, HTTPResponse *res) {
     HTTPResponse_write(res, "<h1>");
-    HTTPResponse_write(res, req->body);
+    if (req->body)
+        HTTPResponse_write(res, req->body);
+    else
+        HTTPResponse_write(res, "No body supplied");
     HTTPResponse_write(res, "</h1>");
+    return 0;
+}
+
+int hello_handler(HTTPRequest *req, HTTPResponse *res) {
+    HTTPResponse_write(res, "<h1>Hello</h1>");
     return 0;
 }
 
@@ -18,7 +26,8 @@ int main(int argc, char **argv) {
         printf("Could not create a server, exiting\n");
         return -1;
     }
-    ChadtpServer_add_handler(server, echo_handler);
+    ChadtpServer_add_handler(server, "/", echo_handler);
+    ChadtpServer_add_handler(server, "/hello", hello_handler);
     printf("The server is now running on port %d\n", PORT);
     ChadtpServer_listen_and_serve(server);
     free(server);

@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "parsing/parsing.h"
+#include "path_matching.h"
 #include "server.h"
 
 #define BUFSIZE 1024
@@ -38,7 +39,7 @@ ChadtpServer *ChadtpServer_new(unsigned short port, const char *ip) {
 
     server->handlers_length = 0;
     server->handlers_capacity = 5;
-    server->handlers = (HandlerFunction *)malloc(sizeof(HandlerFunction) *
+    server->handlers = (HandlerFunction *)malloc(sizeof(ChadtpHandler) *
                                                  server->handlers_capacity);
 
     return server;
@@ -112,7 +113,9 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
         }
     }
     for (int i = 0; i < self->handlers_length; ++i) {
-        self->handlers[i](parsed_request, http_response);
+        ChadtpHandler handler = self->handlers[i];
+        if (match_path(handler.path, parsed_request->path) == 0)
+            handler.f(parsed_request, http_response);
     }
     char ok_res[] = "HTTP/1.0 200 OK\n"
                     "\n";
@@ -157,11 +160,15 @@ int ChadtpServer_listen_and_serve(ChadtpServer *self) {
     return error;
 }
 
-void ChadtpServer_add_handler(ChadtpServer *self, HandlerFunction f) {
+void ChadtpServer_add_handler(ChadtpServer *self, char *template,
+                              HandlerFunction f) {
     if (self->handlers_capacity == self->handlers_length) {
         self->handlers_capacity *= 2;
         self->handlers = realloc(self->handlers, self->handlers_capacity);
     }
-    self->handlers[self->handlers_length] = f;
+    ChadtpHandler handler;
+    handler.path = template;
+    handler.f = f;
+    self->handlers[self->handlers_length] = handler;
     self->handlers_length += 1;
 }

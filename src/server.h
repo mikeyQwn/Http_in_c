@@ -8,14 +8,19 @@
 typedef int (*HandlerFunction)(HTTPRequest *, HTTPResponse *);
 
 typedef struct {
+    HandlerFunction f;
+    char *path;
+} ChadtpHandler;
+
+typedef struct {
     int sockfd;
-    HandlerFunction *handlers;
+    ChadtpHandler *handlers;
     size_t handlers_length;
     size_t handlers_capacity;
 } ChadtpServer;
 
 ChadtpServer *ChadtpServer_new(unsigned short, const char *);
-void ChadtpServer_add_handler(ChadtpServer *, HandlerFunction);
+void ChadtpServer_add_handler(ChadtpServer *, char *, HandlerFunction);
 int ChadtpServer_listen_and_serve(ChadtpServer *);
 
 #endif
