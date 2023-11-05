@@ -11,5 +11,6 @@ typedef struct {
 } PathMatches;
 
 PathMatches match_path(char *, char *);
+int is_more_specific(char *, char *);
 
 #endif

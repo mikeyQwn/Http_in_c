@@ -31,9 +31,9 @@ int main(int argc, char **argv) {
         printf("Could not create a server, exiting\n");
         return -1;
     }
+    ChadtpServer_add_handler(server, "/*", all_handler);
     ChadtpServer_add_handler(server, "/", echo_handler);
     ChadtpServer_add_handler(server, "/hello", hello_handler);
-    ChadtpServer_add_handler(server, "/*", all_handler);
     printf("The server is now running on port %d\n", PORT);
     ChadtpServer_listen_and_serve(server);
     free(server);

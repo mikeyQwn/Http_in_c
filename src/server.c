@@ -115,8 +115,10 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     for (int i = 0; i < self->handlers_length; ++i) {
         ChadtpHandler handler = self->handlers[i];
         PathMatches matches = match_path(handler.path, parsed_request->path);
-        if (matches.status == 0)
+        if (matches.status == 0) {
             handler.f(parsed_request, http_response);
+            break;
+        }
         free(matches.wildcards);
     }
     char ok_res[] = "HTTP/1.0 200 OK\n"
@@ -162,6 +164,22 @@ int ChadtpServer_listen_and_serve(ChadtpServer *self) {
     return error;
 }
 
+static void sort_handlers(ChadtpServer *self) {
+    int is_sorted = 1;
+    do {
+        ChadtpHandler top_handler = self->handlers[self->handlers_length - 1];
+        is_sorted = 1;
+        for (size_t i = 0; i < self->handlers_length - 1; ++i) {
+            if (!is_more_specific(top_handler.path, self->handlers[i].path))
+                continue;
+            self->handlers[self->handlers_length - 1] = self->handlers[i];
+            self->handlers[i] = top_handler;
+            is_sorted = 0;
+            break;
+        }
+    } while (!is_sorted);
+}
+
 void ChadtpServer_add_handler(ChadtpServer *self, char *template,
                               HandlerFunction f) {
     if (self->handlers_capacity == self->handlers_length) {
@@ -173,4 +191,5 @@ void ChadtpServer_add_handler(ChadtpServer *self, char *template,
     handler.f = f;
     self->handlers[self->handlers_length] = handler;
     self->handlers_length += 1;
+    sort_handlers(self);
 }

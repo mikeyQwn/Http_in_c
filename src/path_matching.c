@@ -1,6 +1,20 @@
-#include "path_matching.h"
-#include <stdio.h>
 #include <stdlib.h>
+
+#include "path_matching.h"
+
+int is_more_specific(char *templ_a, char *templ_b) {
+    while (*templ_a != '\0' && *templ_b != '\0') {
+        if (*templ_a == *templ_b) {
+            templ_a += 1;
+            templ_b += 1;
+            continue;
+        }
+        if (*templ_b == '*')
+            return 1;
+        break;
+    }
+    return 0;
+}
 
 static void push_wildcard(PathMatches *matches, char *wildcard) {
     if (matches->wildcards_length == matches->wildcards_capacity) {
@@ -19,7 +33,6 @@ static int match_path_rec(char *template, char *path, PathMatches *matches) {
                 return -1;
             size_t len = 0;
             while (*(path + len) != '\0') {
-                printf("%d %d\n", *(template + 1), *(path + len));
                 int res = match_path_rec(template + 1, path + len, matches);
                 if (res != 0) {
                     len += 1;
@@ -42,11 +55,16 @@ static int match_path_rec(char *template, char *path, PathMatches *matches) {
         ++template;
     }
     if (*path != *template) {
-        printf("This\n");
+        if (*(template + 1) == '\0') {
+            char *wildcard = (char *)malloc(sizeof(char) * (1));
+            wildcard[0] = '\0';
+            push_wildcard(matches, wildcard);
+            return 0;
+        }
         return -1;
     }
     return 0;
-};
+}
 
 PathMatches match_path(char *template, char *path) {
     PathMatches res;
