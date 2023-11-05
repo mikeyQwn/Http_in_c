@@ -114,8 +114,10 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     }
     for (int i = 0; i < self->handlers_length; ++i) {
         ChadtpHandler handler = self->handlers[i];
-        if (match_path(handler.path, parsed_request->path) == 0)
+        PathMatches matches = match_path(handler.path, parsed_request->path);
+        if (matches.status == 0)
             handler.f(parsed_request, http_response);
+        free(matches.wildcards);
     }
     char ok_res[] = "HTTP/1.0 200 OK\n"
                     "\n";

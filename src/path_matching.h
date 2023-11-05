@@ -1,6 +1,15 @@
 #ifndef CHADTP_PATH_MATCHING_H
 #define CHADTP_PATH_MATCHING_H
 
-int match_path(char *, char *);
+#include <stddef.h>
+
+typedef struct {
+    int status;
+    char **wildcards;
+    size_t wildcards_length;
+    size_t wildcards_capacity;
+} PathMatches;
+
+PathMatches match_path(char *, char *);
 
 #endif
