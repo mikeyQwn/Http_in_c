@@ -39,8 +39,8 @@ ChadtpServer *ChadtpServer_new(unsigned short port, const char *ip) {
 
     server->handlers_length = 0;
     server->handlers_capacity = 5;
-    server->handlers = (HandlerFunction *)malloc(sizeof(ChadtpHandler) *
-                                                 server->handlers_capacity);
+    server->handlers = (ChadtpHandler *)malloc(sizeof(ChadtpHandler) *
+                                               server->handlers_capacity);
 
     return server;
 }
