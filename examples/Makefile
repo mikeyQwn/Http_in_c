@@ -4,7 +4,7 @@ CFLAGS=-Wall -pedantic
 
 build_lib : 
 	mkdir -p $(ODIR)/lib
-	$(CC) $(CFLAGS) -O3 -c ../src/parsing/*.c ../src/*.c
+	$(CC) $(CFLAGS) -O3 -c ../src/parsing/*.c ../src/http/*.c ../src/*.c 
 	mv *.o $(ODIR)/lib
 
 run echo_server: build_lib build echo_server

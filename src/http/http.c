@@ -40,3 +40,8 @@ void HTTPResponse_write(HTTPResponse *self, const char *str) {
 void HTTPResponse_writen(HTTPResponse *self, const char *str, size_t len) {
     StringBuffer_writen(&self->body, str, len);
 }
+
+void HTTPResponse_write_status_code(HTTPResponse *self,
+                                    unsigned int status_code) {
+    self->status_code = status_code;
+}

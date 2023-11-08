@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "string_manipulation.h"
+#include "../string_manipulation.h"
 
 typedef enum { HTTP_GET, HTTP_HEAD, HTTP_POST, HTTP_UNDEFINED } HTTPMethod;
 typedef enum {
@@ -36,9 +36,11 @@ typedef struct {
 } HTTPRequest;
 
 typedef struct {
+    unsigned int status_code;
     StringBuffer body;
 } HTTPResponse;
 
 void HTTPResponse_write(HTTPResponse *, const char *);
+void HTTPResponse_write_status_code(HTTPResponse *, unsigned int);
 
 #endif

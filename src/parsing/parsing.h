@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "../http.h"
+#include "../http/http.h"
 
 HTTPRequest *parse_request(char *);
 

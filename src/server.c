@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "http/status_codes.h"
 #include "parsing/parsing.h"
 #include "path_matching.h"
 #include "server.h"
@@ -98,11 +99,10 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     printf("%s", buff);
     printf("\n---------\n");
     HTTPRequest *parsed_request = parse_request(buff);
-    HTTPResponse http_response = {
-        .body.capacity = 5,
-        .body.length = 0,
-        .body.buffer = malloc(sizeof(char) * 5),
-    };
+    HTTPResponse http_response = {.body.capacity = 5,
+                                  .body.length = 0,
+                                  .body.buffer = malloc(sizeof(char) * 5),
+                                  .status_code = 999};
     if (parsed_request != NULL) {
         printf("METHOD: %s\nPATH: %s\nVERSION: %s\n",
                HTTPMethod_toString(parsed_request->method),
@@ -129,8 +129,17 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
         .length = 0,
         .buffer = malloc(sizeof(char) * RESPONSE_STRING_CAPACITY)};
     StringBuffer_write(&response_string, "HTTP/1.0 ");
-    StringBuffer_write_uint(&response_string, 200);
-    StringBuffer_write(&response_string, " OK\n");
+    char *status_code_name = get_status_code_name(http_response.status_code);
+    if (status_code_name == NULL) {
+        StringBuffer_write_uint(&response_string, 500);
+        StringBuffer_append_char(&response_string, ' ');
+        StringBuffer_write(&response_string, "Internal Server Error\n");
+    } else {
+        StringBuffer_write_uint(&response_string, http_response.status_code);
+        StringBuffer_append_char(&response_string, ' ');
+        StringBuffer_write(&response_string, status_code_name);
+        StringBuffer_append_char(&response_string, '\n');
+    }
     StringBuffer_append_char(&response_string, '\n');
     write(connfd, response_string.buffer, response_string.length);
     write(connfd, http_response.body.buffer,
