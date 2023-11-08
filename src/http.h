@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+#include "string_manipulation.h"
+
 typedef enum { HTTP_GET, HTTP_HEAD, HTTP_POST, HTTP_UNDEFINED } HTTPMethod;
 typedef enum {
     HTTP_VERSION_1_0,
@@ -34,9 +36,7 @@ typedef struct {
 } HTTPRequest;
 
 typedef struct {
-    char *buffer;
-    size_t length;
-    size_t capacity;
+    StringBuffer body;
 } HTTPResponse;
 
 void HTTPResponse_write(HTTPResponse *, const char *);

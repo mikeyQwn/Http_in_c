@@ -9,6 +9,7 @@
 #include "parsing/parsing.h"
 #include "path_matching.h"
 #include "server.h"
+#include "string_manipulation.h"
 
 #define BUFSIZE 1024
 
@@ -97,10 +98,11 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     printf("%s", buff);
     printf("\n---------\n");
     HTTPRequest *parsed_request = parse_request(buff);
-    HTTPResponse *http_response = malloc(sizeof(HTTPResponse));
-    http_response->length = 0;
-    http_response->capacity = 5;
-    http_response->buffer = malloc(sizeof(char) * http_response->capacity);
+    HTTPResponse http_response = {
+        .body.capacity = 5,
+        .body.length = 0,
+        .body.buffer = malloc(sizeof(char) * 5),
+    };
     if (parsed_request != NULL) {
         printf("METHOD: %s\nPATH: %s\nVERSION: %s\n",
                HTTPMethod_toString(parsed_request->method),
@@ -116,22 +118,30 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
         ChadtpHandler handler = self->handlers[i];
         PathMatches matches = match_path(handler.path, parsed_request->path);
         if (matches.status == 0) {
-            handler.f(parsed_request, http_response);
+            handler.f(parsed_request, &http_response);
             break;
         }
         free(matches.wildcards);
     }
-    char ok_res[] = "HTTP/1.0 200 OK\n"
-                    "\n";
-    write(connfd, ok_res, sizeof(ok_res) - 1);
-    write(connfd, http_response->buffer, http_response->length * sizeof(char));
-    printf("WRITTEN: %.*s\n", (int)http_response->length,
-           http_response->buffer);
+    const size_t RESPONSE_STRING_CAPACITY = 15;
+    StringBuffer response_string = {
+        .capacity = RESPONSE_STRING_CAPACITY,
+        .length = 0,
+        .buffer = malloc(sizeof(char) * RESPONSE_STRING_CAPACITY)};
+    StringBuffer_write(&response_string, "HTTP/1.0");
+    StringBuffer_write(&response_string, " 200 ");
+    StringBuffer_write(&response_string, "OK\n");
+    StringBuffer_append_char(&response_string, '\n');
+    write(connfd, response_string.buffer, response_string.length);
+    write(connfd, http_response.body.buffer,
+          http_response.body.length * sizeof(char));
+    printf("WRITTEN: %.*s\n", (int)http_response.body.length,
+           http_response.body.buffer);
 
     close(connfd);
     free(buff);
-    free(http_response->buffer);
-    free(http_response);
+    free(http_response.body.buffer);
+    free(response_string.buffer);
     if (parsed_request) {
         free(parsed_request->path);
         free(parsed_request->body);

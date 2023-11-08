@@ -34,13 +34,9 @@ const char *HTTPVersion_toString(HTTPVersion self) {
 }
 
 void HTTPResponse_write(HTTPResponse *self, const char *str) {
-    size_t len = strlen(str);
-    while (self->length + len > self->capacity) {
-        self->capacity *= 2;
-        self->buffer = realloc(self->buffer, sizeof(char) * self->capacity);
-    }
-    for (size_t i = 0; i < len; ++i) {
-        self->buffer[self->length + i] = str[i];
-    }
-    self->length += len;
+    StringBuffer_write(&self->body, str);
+}
+
+void HTTPResponse_writen(HTTPResponse *self, const char *str, size_t len) {
+    StringBuffer_writen(&self->body, str, len);
 }
