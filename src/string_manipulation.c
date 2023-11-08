@@ -23,4 +23,21 @@ void StringBuffer_append_char(StringBuffer *self, char c) {
     }
     self->buffer[self->length] = c;
     self->length += 1;
-};
+}
+
+void StringBuffer_write_uint(StringBuffer *self, unsigned int value) {
+    size_t value_len = 0;
+    for (unsigned int temp = value; temp > 0; temp /= 10)
+        ++value_len;
+
+    while (self->length + value_len > self->capacity) {
+        self->capacity *= 2;
+        self->buffer = realloc(self->buffer, sizeof(char) * self->capacity);
+    }
+
+    for (size_t i = 0; i < value_len; i++) {
+        self->buffer[self->length + value_len - i - 1] = '0' + (value % 10);
+        value /= 10;
+    }
+    self->length += value_len;
+}

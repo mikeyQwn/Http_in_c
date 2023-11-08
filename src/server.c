@@ -128,9 +128,9 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
         .capacity = RESPONSE_STRING_CAPACITY,
         .length = 0,
         .buffer = malloc(sizeof(char) * RESPONSE_STRING_CAPACITY)};
-    StringBuffer_write(&response_string, "HTTP/1.0");
-    StringBuffer_write(&response_string, " 200 ");
-    StringBuffer_write(&response_string, "OK\n");
+    StringBuffer_write(&response_string, "HTTP/1.0 ");
+    StringBuffer_write_uint(&response_string, 200);
+    StringBuffer_write(&response_string, " OK\n");
     StringBuffer_append_char(&response_string, '\n');
     write(connfd, response_string.buffer, response_string.length);
     write(connfd, http_response.body.buffer,
