@@ -42,6 +42,9 @@ typedef struct {
     size_t headers_capacity;
 } HTTPResponse;
 
+void HTTPHeaders_free(HTTPHeaders *);
+
+HTTPResponse HTTPResponse_new();
 void HTTPResponse_write(HTTPResponse *, const char *);
 void HTTPResponse_write_status_code(HTTPResponse *, unsigned int);
 void HTTPResponse_write_header(HTTPResponse *, const char *, const char *);

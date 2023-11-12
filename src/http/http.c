@@ -33,6 +33,29 @@ const char *HTTPVersion_toString(HTTPVersion self) {
     exit(1);
 }
 
+void HTTPHeaders_free(HTTPHeaders *self) {
+    for (size_t i = 0; i < self->length; ++i) {
+        free(self->headers[i].key);
+        free(self->headers[i].value);
+    }
+    if (self->headers)
+        free(self->headers);
+}
+
+HTTPResponse HTTPResponse_new() {
+    const size_t DEFAULT_CAPACITY = 5;
+    const unsigned int DEFAULT_STATUS_CODE = 999;
+    HTTPResponse http_response = {
+        .body.capacity = DEFAULT_CAPACITY,
+        .body.length = 0,
+        .body.buffer = malloc(sizeof(char) * DEFAULT_CAPACITY),
+        .status_code = DEFAULT_STATUS_CODE,
+        .headers.length = 0,
+        .headers_capacity = DEFAULT_CAPACITY,
+        .headers.headers = malloc(sizeof(HTTPHeader) * DEFAULT_CAPACITY)};
+    return http_response;
+}
+
 void HTTPResponse_write(HTTPResponse *self, const char *str) {
     StringBuffer_write(&self->body, str);
 }

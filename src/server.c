@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "http/http.h"
 #include "http/status_codes.h"
 #include "parsing/parsing.h"
 #include "path_matching.h"
@@ -79,13 +80,92 @@ static char *read_request(int connfd, int *bytes_read) {
     return buff;
 }
 
-// Accepts and handles a single connection
-static int ChadtpServer_accept_connection(ChadtpServer *self) {
+static int ChadtpServer_recieve_connection(ChadtpServer *self) {
     int connfd;
     struct sockaddr_in new_addr;
     socklen_t socklen = sizeof(new_addr);
     connfd = accept(self->sockfd, (struct sockaddr *)&new_addr, &socklen);
+    return connfd;
+}
 
+static void ChadtpServer_log_request(ChadtpServer *self,
+                                     HTTPRequest *parsed_request) {
+    if (parsed_request == NULL) {
+        printf("[server]Could not parse the request");
+        return;
+    }
+    printf("METHOD: %s\nPATH: %s\nVERSION: %s\n",
+           HTTPMethod_toString(parsed_request->method), parsed_request->path,
+           HTTPVersion_toString(parsed_request->version));
+    for (int i = 0; i < parsed_request->headers.length; ++i) {
+        printf("KEY: %s, VALUE: %s\n", parsed_request->headers.headers[i].key,
+               parsed_request->headers.headers[i].value);
+    }
+}
+
+static void ChadtpServer_apply_handlers(ChadtpServer *self,
+                                        HTTPRequest *parsed_request,
+                                        HTTPResponse *http_response) {
+    for (int i = 0; i < self->handlers_length; ++i) {
+        ChadtpHandler handler = self->handlers[i];
+        PathMatches matches = match_path(handler.path, parsed_request->path);
+        if (matches.status == 0) {
+            handler.f(parsed_request, http_response);
+            break;
+        }
+        free(matches.wildcards);
+    }
+}
+
+static void ChadtpServer_write_status_line(ChadtpServer *self,
+                                           HTTPResponse *http_response,
+                                           StringBuffer *response_string) {
+    StringBuffer_write(response_string, "HTTP/1.0 ");
+    char *status_code_name = get_status_code_name(http_response->status_code);
+    if (status_code_name == NULL) {
+        StringBuffer_write_uint(response_string, 500);
+        StringBuffer_append_char(response_string, ' ');
+        StringBuffer_write(response_string, "Internal Server Error\n");
+    } else {
+        StringBuffer_write_uint(response_string, http_response->status_code);
+        StringBuffer_append_char(response_string, ' ');
+        StringBuffer_write(response_string, status_code_name);
+        StringBuffer_append_char(response_string, '\n');
+    }
+}
+
+static void ChadtpServer_write_headers(ChadtpServer *self,
+                                       HTTPResponse *http_response,
+                                       StringBuffer *response_string) {
+    for (size_t i = 0; i < http_response->headers.length; ++i) {
+        StringBuffer_write(response_string,
+                           http_response->headers.headers[i].key);
+        StringBuffer_write(response_string, ": ");
+        StringBuffer_write(response_string,
+                           http_response->headers.headers[i].value);
+        StringBuffer_write(response_string, "\n");
+    }
+}
+
+static void ChadtpServer_free_connection_leftovers(
+    ChadtpServer *self, char *buff, HTTPResponse *http_response,
+    StringBuffer *response_string, HTTPRequest *parsed_request) {
+    free(buff);
+    free(http_response->body.buffer);
+    HTTPHeaders_free(&http_response->headers);
+
+    free(response_string->buffer);
+    if (parsed_request) {
+        free(parsed_request->path);
+        free(parsed_request->body);
+        HTTPHeaders_free(&parsed_request->headers);
+        free(parsed_request);
+    }
+}
+
+// Accepts and handles a single connection
+static int ChadtpServer_accept_connection(ChadtpServer *self) {
+    int connfd = ChadtpServer_recieve_connection(self);
     if (connfd < 0) {
         close(connfd);
         return -1;
@@ -99,59 +179,18 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     printf("%s", buff);
     printf("\n---------\n");
     HTTPRequest *parsed_request = parse_request(buff);
-    HTTPResponse http_response = {.body.capacity = 5,
-                                  .body.length = 0,
-                                  .body.buffer = malloc(sizeof(char) * 5),
-                                  .status_code = 999,
-                                  .headers.length = 0,
-                                  .headers_capacity = 5,
-                                  .headers.headers =
-                                      malloc(sizeof(HTTPHeader) * 5)};
-    if (parsed_request != NULL) {
-        printf("METHOD: %s\nPATH: %s\nVERSION: %s\n",
-               HTTPMethod_toString(parsed_request->method),
-               parsed_request->path,
-               HTTPVersion_toString(parsed_request->version));
-        for (int i = 0; i < parsed_request->headers.length; ++i) {
-            printf("KEY: %s, VALUE: %s\n",
-                   parsed_request->headers.headers[i].key,
-                   parsed_request->headers.headers[i].value);
-        }
-    }
-    for (int i = 0; i < self->handlers_length; ++i) {
-        ChadtpHandler handler = self->handlers[i];
-        PathMatches matches = match_path(handler.path, parsed_request->path);
-        if (matches.status == 0) {
-            handler.f(parsed_request, &http_response);
-            break;
-        }
-        free(matches.wildcards);
-    }
+    ChadtpServer_log_request(self, parsed_request);
+
+    HTTPResponse http_response = HTTPResponse_new();
+    ChadtpServer_apply_handlers(self, parsed_request, &http_response);
+
     const size_t RESPONSE_STRING_CAPACITY = 15;
-    StringBuffer response_string = {
-        .capacity = RESPONSE_STRING_CAPACITY,
-        .length = 0,
-        .buffer = malloc(sizeof(char) * RESPONSE_STRING_CAPACITY)};
-    StringBuffer_write(&response_string, "HTTP/1.0 ");
-    char *status_code_name = get_status_code_name(http_response.status_code);
-    if (status_code_name == NULL) {
-        StringBuffer_write_uint(&response_string, 500);
-        StringBuffer_append_char(&response_string, ' ');
-        StringBuffer_write(&response_string, "Internal Server Error\n");
-    } else {
-        StringBuffer_write_uint(&response_string, http_response.status_code);
-        StringBuffer_append_char(&response_string, ' ');
-        StringBuffer_write(&response_string, status_code_name);
-        StringBuffer_append_char(&response_string, '\n');
-    }
-    for (size_t i = 0; i < http_response.headers.length; ++i) {
-        StringBuffer_write(&response_string,
-                           http_response.headers.headers[i].key);
-        StringBuffer_write(&response_string, ": ");
-        StringBuffer_write(&response_string,
-                           http_response.headers.headers[i].value);
-        StringBuffer_write(&response_string, "\n");
-    }
+    StringBuffer response_string =
+        StringBuffer_with_capacity(RESPONSE_STRING_CAPACITY);
+
+    ChadtpServer_write_status_line(self, &http_response, &response_string);
+    ChadtpServer_write_headers(self, &http_response, &response_string);
+
     StringBuffer_append_char(&response_string, '\n');
     write(connfd, response_string.buffer, response_string.length);
     write(connfd, http_response.body.buffer,
@@ -160,25 +199,8 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
            http_response.body.buffer);
 
     close(connfd);
-    free(buff);
-    free(http_response.body.buffer);
-    for (size_t i = 0; i < http_response.headers.length; ++i) {
-        free(http_response.headers.headers[i].key);
-        free(http_response.headers.headers[i].value);
-    }
-    free(http_response.headers.headers);
-    free(response_string.buffer);
-    if (parsed_request) {
-        free(parsed_request->path);
-        free(parsed_request->body);
-        for (size_t i = 0; i < parsed_request->headers.length; i++) {
-            free(parsed_request->headers.headers[i].key);
-            free(parsed_request->headers.headers[i].value);
-        }
-        if (parsed_request->headers.headers)
-            free(parsed_request->headers.headers);
-        free(parsed_request);
-    }
+    ChadtpServer_free_connection_leftovers(self, buff, &http_response,
+                                           &response_string, parsed_request);
 
     return 0;
 }

@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+StringBuffer StringBuffer_with_capacity(size_t capacity) {
+    StringBuffer string_buffer = {.capacity = capacity,
+                                  .length = 0,
+                                  .buffer = malloc(sizeof(char) * capacity)};
+    return string_buffer;
+}
+
 void StringBuffer_writen(StringBuffer *self, const char *str, size_t len) {
     while (self->length + len > self->capacity) {
         self->capacity *= 2;
