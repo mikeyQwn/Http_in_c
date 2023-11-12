@@ -102,7 +102,11 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     HTTPResponse http_response = {.body.capacity = 5,
                                   .body.length = 0,
                                   .body.buffer = malloc(sizeof(char) * 5),
-                                  .status_code = 999};
+                                  .status_code = 999,
+                                  .headers.length = 0,
+                                  .headers_capacity = 5,
+                                  .headers.headers =
+                                      malloc(sizeof(HTTPHeader) * 5)};
     if (parsed_request != NULL) {
         printf("METHOD: %s\nPATH: %s\nVERSION: %s\n",
                HTTPMethod_toString(parsed_request->method),
@@ -158,6 +162,11 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
     close(connfd);
     free(buff);
     free(http_response.body.buffer);
+    for (size_t i = 0; i < http_response.headers.length; ++i) {
+        free(http_response.headers.headers[i].key);
+        free(http_response.headers.headers[i].value);
+    }
+    free(http_response.headers.headers);
     free(response_string.buffer);
     if (parsed_request) {
         free(parsed_request->path);
