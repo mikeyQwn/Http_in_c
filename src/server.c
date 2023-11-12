@@ -140,6 +140,14 @@ static int ChadtpServer_accept_connection(ChadtpServer *self) {
         StringBuffer_write(&response_string, status_code_name);
         StringBuffer_append_char(&response_string, '\n');
     }
+    for (size_t i = 0; i < http_response.headers.length; ++i) {
+        StringBuffer_write(&response_string,
+                           http_response.headers.headers[i].key);
+        StringBuffer_write(&response_string, ": ");
+        StringBuffer_write(&response_string,
+                           http_response.headers.headers[i].value);
+        StringBuffer_write(&response_string, "\n");
+    }
     StringBuffer_append_char(&response_string, '\n');
     write(connfd, response_string.buffer, response_string.length);
     write(connfd, http_response.body.buffer,

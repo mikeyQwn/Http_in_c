@@ -83,13 +83,6 @@ static int should_return(char **head) {
     return 0;
 }
 
-static char *copy_string(char *src, size_t len) {
-    char *res = malloc(sizeof(char) * (len + 1));
-    res[len] = '\0';
-    strncpy(res, src, len);
-    return res;
-}
-
 static size_t move_to_next_non_whitespace(char **str) {
     size_t newlines = 0;
     while (**str != '\0' && (**str == ' ' || **str == '\n' || **str == '\t')) {

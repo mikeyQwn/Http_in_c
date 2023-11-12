@@ -38,9 +38,12 @@ typedef struct {
 typedef struct {
     unsigned int status_code;
     StringBuffer body;
+    HTTPHeaders headers;
+    size_t headers_capacity;
 } HTTPResponse;
 
 void HTTPResponse_write(HTTPResponse *, const char *);
 void HTTPResponse_write_status_code(HTTPResponse *, unsigned int);
+void HTTPResponse_write_header(HTTPResponse *, const char *, const char *);
 
 #endif

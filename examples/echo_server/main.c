@@ -5,12 +5,13 @@
 #include "../../src/server.h"
 
 int echo_handler(HTTPRequest *req, HTTPResponse *res) {
+    HTTPResponse_write_header(res, "ServerName", "Chadttp");
     HTTPResponse_write(res, "<h1>");
     if (req->body) {
         HTTPResponse_write_status_code(res, CHADTP_OK);
         HTTPResponse_write(res, req->body);
     } else {
-        HTTPResponse_write_status_code(res, CHADTP_NO_CONTENT);
+        HTTPResponse_write_status_code(res, CHADTP_OK);
         HTTPResponse_write(res, "No body supplied");
     }
     HTTPResponse_write(res, "</h1>");
@@ -18,12 +19,14 @@ int echo_handler(HTTPRequest *req, HTTPResponse *res) {
 }
 
 int hello_handler(HTTPRequest *req, HTTPResponse *res) {
+    HTTPResponse_write_header(res, "ServerName", "Chadttp");
     HTTPResponse_write_status_code(res, CHADTP_OK);
     HTTPResponse_write(res, "<h1>Hello</h1>");
     return 0;
 }
 
 int all_handler(HTTPRequest *req, HTTPResponse *res) {
+    HTTPResponse_write_header(res, "ServerName", "Chadttp");
     HTTPResponse_write_status_code(res, CHADTP_OK);
     HTTPResponse_write(res, "<h1>This is a standard response</h1>");
     return 0;

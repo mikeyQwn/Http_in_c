@@ -12,10 +12,12 @@ void StringBuffer_writen(StringBuffer *self, const char *str, size_t len) {
         self->buffer[self->length + i] = str[i];
     self->length += len;
 }
+
 void StringBuffer_write(StringBuffer *self, const char *str) {
     size_t len = strlen(str);
     StringBuffer_writen(self, str, len);
 }
+
 void StringBuffer_append_char(StringBuffer *self, char c) {
     if (self->length == self->capacity) {
         self->capacity *= 2;
@@ -40,4 +42,11 @@ void StringBuffer_write_uint(StringBuffer *self, unsigned int value) {
         value /= 10;
     }
     self->length += value_len;
+}
+
+char *copy_string(const char *src, size_t len) {
+    char *res = malloc(sizeof(char) * (len + 1));
+    res[len] = '\0';
+    strncpy(res, src, len);
+    return res;
 }
