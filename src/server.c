@@ -113,6 +113,9 @@ static void ChadtpServer_apply_handlers(ChadtpServer *self,
             handler.f(parsed_request, http_response);
             break;
         }
+        for (size_t i = 0; i < matches.wildcards_length; ++i)
+            free(matches.wildcards[i]);
+
         free(matches.wildcards);
     }
 }
