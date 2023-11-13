@@ -22,35 +22,59 @@ make -s run [EXAMPLE]
 
 ### Usage:
 
-Создание сервера  
+#### Создание сервера:
+Сервер создается с помощью функции ChadtpServer_new
+
+##### Параметры:
+unsigned short - порт сервера  
+char* - айпи сервера, разделенное точками (Например, "127.0.0.1")  
 ```c
 const unsigned short PORT = [PORT];
 const char IP[] = [IP];
 ChadtpServer *server = ChadtpServer_new(PORT, IP);
 ```
 
-Добавление хендлера:  
-Для добавления хендлеров - функция ChadtpServer_add_handler  
+#### Добавление хендлера:
+**Для добавления хендлеров - функция ChadtpServer_add_handler**  
 Срабатывает наиболее специфичный хендлер, например:  
 Имея хендлер А для URL "/*" и хендлер B для URL "/api/*", при запросе с URL "/api/" всегда сработает хендлер B  
 
-Параметры: 
+##### Параметры:
 ChadtpServer* - указатель на созданный в предыдущем пункте сервер
 char* - путь, по которому этот хендлер срабатывает. 
 Поддерживает шаблоны, например - "/*" - срабатывает для всех URL, начинающихся с "/".  
 HandlerFunction* - указатель на функцию-хендлер  
 ```c
-ChadtpServer_add_handler(server, "/", echo_handler);
+ChadtpServer_add_handler(server, "/", example);
 ```
 
-Хендлер - функция с двумя параметрами:  
+#### Хендлер - функция с двумя параметрами:
 HTTPRequest* - указатель на получаемый запрос  
 HTTPResponse* - указатель на ответ, который отправит сервер после выполнения хендлера  
 ```c
-int example_handler(HTTPRequest *req, HTTPResponse *res) {
+int example(HTTPRequest *req, HTTPResponse *res) {
     HTTPResponse_write_header(res, "ServerName", "Chadttp");
     HTTPResponse_write_status_code(res, CHADTP_OK);
     HTTPResponse_write(res, "<h1>Hello</h1>");
     return 0;
 }
 ```
+
+#### Добавление данных в ответ сервера:
+Для добавления данных в ответ рекомендуется использовать функции:
+
+**HTTPResponse_write**
+##### Параметры:
+HTTPRequest* - указатель на ответ сервера
+char* - строка с данными для тела ответа сервера
+
+**HTTPResponse_write**
+##### Параметры:
+HTTPRequest* - указатель на ответ сервера
+unsigned int - статус-код ответа сервера
+
+**HTTPResponse_write_header**
+##### Параметры:
+HTTPRequest* - указатель на ответ сервера
+char* - строка ключа хедера
+char* - строка значения хедера
