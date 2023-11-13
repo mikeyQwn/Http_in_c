@@ -24,7 +24,6 @@ make -s run_get_time_server
 
 **Использование:**  
 ```shell
-make -s run_get_time_server
+make -s run_echo_server
 ```
-
 
